@@ -6,6 +6,77 @@ This project integrates [agentsh](https://github.com/canyonroad/agentsh) with [R
 
 agentsh is a policy-enforced execution gateway that secures AI coding agents by intercepting and controlling commands, network access, and file operations. When combined with Runloop's isolated Devbox environments, it provides defense-in-depth security for AI agent workloads.
 
+## What agentsh Adds to Runloop
+
+Runloop provides isolated Devbox environments for AI agents. agentsh adds a **policy enforcement layer** on top that provides:
+
+### Command Interception & Control
+- **Shell shim replacement**: `/bin/bash` → `agentsh-shell-shim`
+- **Policy-based decisions**: allow, deny, or require approval for commands
+- **Argument pattern matching**: Block dangerous flags (e.g., `rm -rf`) using regex patterns
+- **Command categories**: Safe commands allowed, dangerous commands blocked
+
+### Network Filtering
+- **Domain allowlisting**: Only approved domains accessible (npm, PyPI, Cargo, Go proxy)
+- **Cloud metadata blocking**: Prevents SSRF attacks (169.254.169.254, metadata.google.internal)
+- **Private network blocking**: No lateral movement (10.x, 172.16.x, 192.168.x)
+- **Kubernetes API blocking**: Prevents access to cluster control plane
+- **Approval for unknown destinations**: HTTPS/HTTP to unlisted domains requires approval
+- **HTTPS proxy**: All traffic routed through agentsh for inspection
+
+### File System Protection
+- **Soft-delete**: Deleted files quarantined, not destroyed (recoverable)
+- **Credential approval**: Access to `.ssh`, `.aws`, `.gcloud`, `.azure`, `.kube`, `.env` requires approval
+- **Git credential protection**: `.git-credentials` and `.netrc` access requires approval
+- **Path-based rules**: Fine-grained control over read/write/delete operations
+- **Dangerous binary blocking**: No access to sudo, nsenter, docker binaries
+- **Container runtime protection**: Docker socket (`/var/run/docker.sock`) access blocked
+- **Kernel interface blocking**: `/proc` and `/sys` access denied (container escape prevention)
+
+### Data Loss Prevention (DLP)
+- **API key redaction**: Automatically hides sensitive keys from AI output
+- **Pattern matching**: Email, phone, credit card, SSN detection
+- **Custom patterns**: Runloop keys, OpenAI keys, Anthropic keys, AWS keys, GitHub tokens (PAT & OAuth), JWT, Slack tokens, private keys
+
+### LLM Provider Proxy
+- **Embedded proxy**: Routes AI API calls through agentsh for monitoring
+- **Provider support**: Anthropic (`api.anthropic.com`), OpenAI (`api.openai.com`)
+- **Credential isolation**: API keys hidden from agent code
+
+### Resource Limits
+- **Memory limits**: Prevent runaway processes (default: 2GB)
+- **CPU quotas**: Fair resource sharing (default: 50%)
+- **Process limits**: Prevent fork bombs (default: 100 processes)
+- **Disk I/O limits**: Prevent storage abuse (50 MB/s read, 25 MB/s write)
+- **Timeouts**: Command timeout (5 min), session timeout (1 hour)
+
+### Audit Logging
+- **Complete operation log**: All allowed, denied, and approved operations
+- **Output capture**: stdout/stderr included in audit trail
+- **90-day retention**: Full history for security review
+- **SQLite storage**: Queryable audit database
+
+### Observability
+- **Health endpoints**: `/health` and `/ready` for container orchestration
+- **Metrics endpoint**: `/metrics` for Prometheus scraping
+- **gRPC API**: Alternative to HTTP for programmatic access (port 9090)
+
+## Limitations on Runloop
+
+Some agentsh features are unavailable in Runloop Devboxes due to container restrictions:
+
+| Feature | Status | Reason |
+|---------|--------|--------|
+| **FUSE filesystem** | Disabled | `/dev/fuse` not available, no `SYS_ADMIN` capability |
+| **cgroups enforcement** | Disabled | Cgroup filesystem mounted read-only (`ro`) |
+| **seccomp profiles** | Disabled | No `CAP_SYS_ADMIN` to load custom seccomp filters |
+| **Interactive approvals** | Disabled | No TTY attached to Devbox stdin/stdout |
+
+These features work via alternative mechanisms:
+- **Resource limits**: Enforced by Runloop's container configuration instead of cgroups
+- **Syscall filtering**: Runloop's container runtime provides base seccomp policy
+- **Approvals**: Can be enabled in async mode with external webhook integration
+
 ## Quick Start
 
 ```bash
@@ -73,7 +144,7 @@ Verifies normal development operations work correctly.
 | Git version | `git --version` | **PASS** | git version 2.43.0 |
 | Bash execution | `bash -c 'echo $((1+1))'` | **PASS** | Output: 2 |
 | npm registry access | `curl -sI https://registry.npmjs.org/` | **PASS** | HTTP/1.1 200 Connection Established |
-| agentsh version | `/usr/bin/agentsh --version` | **PASS** | agentsh 0.7.9 |
+| agentsh version | `/usr/bin/agentsh --version` | **PASS** | agentsh 0.7.10 |
 
 ### Summary
 
@@ -148,7 +219,7 @@ command_rules:
 
   - name: block-rm-recursive
     commands: [rm]
-    args_patterns: ["*-rf*", "*-r*", "*--recursive*"]
+    args_patterns: ["-rf", "-r", "--recursive"]
     decision: deny
     message: "Recursive delete blocked"
 
