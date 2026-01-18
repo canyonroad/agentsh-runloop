@@ -8,58 +8,45 @@ agentsh is a policy-enforced execution gateway that secures AI coding agents by 
 
 ## What agentsh Adds to Runloop
 
-Runloop provides isolated Devbox environments for AI agents. agentsh adds a **policy enforcement layer** on top that provides:
+Runloop provides isolated Devbox environments for AI agents. agentsh adds a **policy enforcement layer** on top:
 
-### Command Interception & Control
-- **Shell shim replacement**: `/bin/bash` → `agentsh-shell-shim`
-- **Policy-based decisions**: allow, deny, or require approval for commands
-- **Argument pattern matching**: Block dangerous flags (e.g., `rm -rf`) using regex patterns
-- **Command categories**: Safe commands allowed, dangerous commands blocked
-
-### Network Filtering
-- **Domain allowlisting**: Only approved domains accessible (npm, PyPI, Cargo, Go proxy)
-- **Cloud metadata blocking**: Prevents SSRF attacks (169.254.169.254, metadata.google.internal)
-- **Private network blocking**: No lateral movement (10.x, 172.16.x, 192.168.x)
-- **Kubernetes API blocking**: Prevents access to cluster control plane
-- **Approval for unknown destinations**: HTTPS/HTTP to unlisted domains requires approval
-- **HTTPS proxy**: All traffic routed through agentsh for inspection
-
-### File System Protection
-- **Soft-delete**: Deleted files quarantined, not destroyed (recoverable)
-- **Credential approval**: Access to `.ssh`, `.aws`, `.gcloud`, `.azure`, `.kube`, `.env` requires approval
-- **Git credential protection**: `.git-credentials` and `.netrc` access requires approval
-- **Path-based rules**: Fine-grained control over read/write/delete operations
-- **Dangerous binary blocking**: No access to sudo, nsenter, docker binaries
-- **Container runtime protection**: Docker socket (`/var/run/docker.sock`) access blocked
-- **Kernel interface blocking**: `/proc` and `/sys` access denied (container escape prevention)
-
-### Data Loss Prevention (DLP)
-- **API key redaction**: Automatically hides sensitive keys from AI output
-- **Pattern matching**: Email, phone, credit card, SSN detection
-- **Custom patterns**: Runloop keys, OpenAI keys, Anthropic keys, AWS keys, GitHub tokens (PAT & OAuth), JWT, Slack tokens, private keys
-
-### LLM Provider Proxy
-- **Embedded proxy**: Routes AI API calls through agentsh for monitoring
-- **Provider support**: Anthropic (`api.anthropic.com`), OpenAI (`api.openai.com`)
-- **Credential isolation**: API keys hidden from agent code
-
-### Resource Limits
-- **Memory limits**: Prevent runaway processes (default: 2GB)
-- **CPU quotas**: Fair resource sharing (default: 50%)
-- **Process limits**: Prevent fork bombs (default: 100 processes)
-- **Disk I/O limits**: Prevent storage abuse (50 MB/s read, 25 MB/s write)
-- **Timeouts**: Command timeout (5 min), session timeout (1 hour)
-
-### Audit Logging
-- **Complete operation log**: All allowed, denied, and approved operations
-- **Output capture**: stdout/stderr included in audit trail
-- **90-day retention**: Full history for security review
-- **SQLite storage**: Queryable audit database
-
-### Observability
-- **Health endpoints**: `/health` and `/ready` for container orchestration
-- **Metrics endpoint**: `/metrics` for Prometheus scraping
-- **gRPC API**: Alternative to HTTP for programmatic access (port 9090)
+| Category | Feature | Description |
+|----------|---------|-------------|
+| **Command Interception** | Shell shim | `/bin/bash` replaced with `agentsh-shell-shim` |
+| | Policy decisions | Allow, deny, or require approval for commands |
+| | Argument matching | Block dangerous flags (e.g., `rm -rf`) via regex |
+| | Command categories | Safe commands allowed, dangerous ones blocked |
+| **Network Filtering** | Domain allowlist | Only approved domains accessible (npm, PyPI, Cargo, Go) |
+| | Cloud metadata blocking | Prevents SSRF (169.254.169.254, metadata.google.internal) |
+| | Private network blocking | No lateral movement (10.x, 172.16.x, 192.168.x) |
+| | Kubernetes blocking | Prevents access to cluster control plane |
+| | Unknown destination approval | HTTPS/HTTP to unlisted domains requires approval |
+| | HTTPS proxy | All traffic routed through agentsh for inspection |
+| **File System Protection** | Soft-delete | Deleted files quarantined, not destroyed (recoverable) |
+| | Credential approval | `.ssh`, `.aws`, `.gcloud`, `.azure`, `.kube`, `.env` require approval |
+| | Git credential protection | `.git-credentials` and `.netrc` require approval |
+| | Path-based rules | Fine-grained read/write/delete control |
+| | Dangerous binary blocking | No access to sudo, nsenter, docker binaries |
+| | Container runtime protection | Docker socket access blocked |
+| | Kernel interface blocking | `/proc` and `/sys` access denied |
+| **Data Loss Prevention** | API key redaction | Sensitive keys hidden from AI output |
+| | Pattern matching | Email, phone, credit card, SSN detection |
+| | Custom patterns | Runloop, OpenAI, Anthropic, AWS, GitHub, JWT, Slack, private keys |
+| **LLM Provider Proxy** | Embedded proxy | Routes AI API calls through agentsh |
+| | Provider support | Anthropic and OpenAI APIs |
+| | Credential isolation | API keys hidden from agent code |
+| **Resource Limits** | Memory | Prevent runaway processes (default: 2GB) |
+| | CPU | Fair sharing (default: 50%) |
+| | Processes | Prevent fork bombs (default: 100) |
+| | Disk I/O | Prevent abuse (50 MB/s read, 25 MB/s write) |
+| | Timeouts | Command (5 min), session (1 hour) |
+| **Audit Logging** | Operation log | All allowed, denied, approved operations logged |
+| | Output capture | stdout/stderr in audit trail |
+| | Retention | 90-day history |
+| | Storage | SQLite database, queryable |
+| **Observability** | Health endpoints | `/health` and `/ready` for orchestration |
+| | Metrics | `/metrics` for Prometheus |
+| | gRPC API | Alternative to HTTP (port 9090) |
 
 ## Limitations on Runloop
 
