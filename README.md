@@ -50,19 +50,28 @@ Runloop provides isolated Devbox environments for AI agents. agentsh adds a **po
 
 ## Limitations on Runloop
 
-Some agentsh features are unavailable in Runloop Devboxes due to container restrictions:
+Based on `agentsh detect` output (v0.8.0), here's the capability matrix for Runloop Devboxes:
 
-| Feature | Status | Reason |
-|---------|--------|--------|
-| **FUSE filesystem** | Disabled | `/dev/fuse` not available, no `SYS_ADMIN` capability |
-| **cgroups enforcement** | Disabled | Cgroup filesystem mounted read-only (`ro`) |
-| **seccomp profiles** | Disabled | No `CAP_SYS_ADMIN` to load custom seccomp filters |
-| **Interactive approvals** | Disabled | No TTY attached to Devbox stdin/stdout |
+| Capability | Status | Notes |
+|------------|--------|-------|
+| capabilities_drop | ✓ | Drop Linux capabilities |
+| cgroups_v2 | ✓ | Available but filesystem is read-only |
+| ebpf | ✓ | Available |
+| seccomp | ✓ | Basic + user_notify available |
+| landlock_abi | ✓ (v0) | Partial support |
+| fuse | ✗ | `/dev/fuse` not available |
+| landlock | ✗ | Full Landlock not available |
+| landlock_network | ✗ | Requires kernel 6.7+ (ABI v4) |
+| pid_namespace | ✗ | Not available |
+| interactive_approvals | ✗ | No TTY attached |
 
-These features work via alternative mechanisms:
-- **Resource limits**: Enforced by Runloop's container configuration instead of cgroups
-- **Syscall filtering**: Runloop's container runtime provides base seccomp policy
-- **Approvals**: Can be enabled in async mode with external webhook integration
+**Security Mode**: minimal | **Protection Score**: ~50%
+
+These limitations are mitigated by:
+- **Network filtering**: Proxy-based domain/IP blocking (works without Landlock network)
+- **Command blocking**: Policy engine blocks dangerous commands
+- **Resource limits**: Enforced by Runloop's container configuration
+- **Approvals**: Can be enabled in async mode with webhook integration
 
 ## Quick Start
 
@@ -131,7 +140,7 @@ Verifies normal development operations work correctly.
 | Git version | `git --version` | **PASS** | git version 2.43.0 |
 | Bash execution | `bash -c 'echo $((1+1))'` | **PASS** | Output: 2 |
 | npm registry access | `curl -sI https://registry.npmjs.org/` | **PASS** | HTTP/1.1 200 Connection Established |
-| agentsh version | `/usr/bin/agentsh --version` | **PASS** | agentsh 0.7.10 |
+| agentsh version | `/usr/bin/agentsh --version` | **PASS** | agentsh 0.8.0 |
 
 ### Summary
 

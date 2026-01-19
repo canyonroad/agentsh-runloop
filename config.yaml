@@ -1,4 +1,11 @@
 # agentsh server configuration for Runloop Devboxes
+# Based on: agentsh detect (v0.8.0)
+# Platform: linux | Security mode: minimal | Protection score: ~50%
+#
+# Available capabilities on Runloop:
+#   ✓ capabilities_drop, cgroups_v2, ebpf, seccomp, seccomp_basic, seccomp_user_notify
+#   ✓ landlock_abi (v0)
+#   ✗ fuse, landlock, landlock_network, pid_namespace
 
 server:
   http:
@@ -32,13 +39,14 @@ audit:
 
 sandbox:
   enabled: true
-  allow_degraded: true  # Allow running without all features
+  allow_degraded: true
 
   limits:
     max_memory_mb: 4096
     max_cpu_percent: 100
     max_processes: 256
 
+  # FUSE: ✗ not available on Runloop (no /dev/fuse)
   fuse:
     enabled: false
 
@@ -47,11 +55,13 @@ sandbox:
     intercept_mode: "all"
     proxy_listen_addr: "127.0.0.1:0"
 
+  # cgroups_v2: ✓ available but filesystem is read-only
   cgroups:
-    enabled: false  # Cgroup filesystem may be read-only
+    enabled: false
 
+  # seccomp: ✓ available (basic + user_notify)
   seccomp:
-    enabled: false  # Requires privileged mode
+    enabled: false  # Keep disabled for compatibility
 
 proxy:
   mode: "embedded"
