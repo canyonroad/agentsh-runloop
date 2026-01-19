@@ -59,9 +59,10 @@ sandbox:
   cgroups:
     enabled: false
 
-  # seccomp: ✓ available (basic + user_notify)
+  # seccomp: ✓ detected as available, but enabling causes timeouts
+  # Likely conflicts with Runloop's existing container seccomp profile
   seccomp:
-    enabled: false  # Keep disabled for compatibility
+    enabled: false
 
 proxy:
   mode: "embedded"

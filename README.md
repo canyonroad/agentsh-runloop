@@ -52,18 +52,18 @@ Runloop provides isolated Devbox environments for AI agents. agentsh adds a **po
 
 Based on `agentsh detect` output (v0.8.0), here's the capability matrix for Runloop Devboxes:
 
-| Capability | Status | Notes |
-|------------|--------|-------|
-| capabilities_drop | ✓ | Drop Linux capabilities |
-| cgroups_v2 | ✓ | Available but filesystem is read-only |
-| ebpf | ✓ | Available |
-| seccomp | ✓ | Basic + user_notify available |
-| landlock_abi | ✓ (v0) | Partial support |
-| fuse | ✗ | `/dev/fuse` not available |
-| landlock | ✗ | Full Landlock not available |
-| landlock_network | ✗ | Requires kernel 6.7+ (ABI v4) |
-| pid_namespace | ✗ | Not available |
-| interactive_approvals | ✗ | No TTY attached |
+| Capability | Detected | Usable | Notes |
+|------------|----------|--------|-------|
+| capabilities_drop | ✓ | ✓ | Drop Linux capabilities |
+| cgroups_v2 | ✓ | ✗ | Filesystem is read-only |
+| ebpf | ✓ | ? | Available, not tested |
+| seccomp | ✓ | ✗ | Conflicts with Runloop's container seccomp profile |
+| landlock_abi | ✓ (v0) | ✗ | Too old, limited usefulness |
+| fuse | ✗ | ✗ | `/dev/fuse` not available |
+| landlock | ✗ | ✗ | Full Landlock not available |
+| landlock_network | ✗ | ✗ | Requires kernel 6.7+ (ABI v4) |
+| pid_namespace | ✗ | ✗ | Not available |
+| interactive_approvals | ✗ | ✗ | No TTY attached |
 
 **Security Mode**: minimal | **Protection Score**: ~50%
 
