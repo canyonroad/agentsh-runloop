@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 ARG AGENTSH_REPO=canyonroad/agentsh
-ARG AGENTSH_TAG=v0.8.0
+ARG AGENTSH_TAG=v0.8.10
 ARG DEB_ARCH=amd64
 
 # Install base dependencies

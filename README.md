@@ -16,6 +16,7 @@ Runloop provides isolated Devbox environments for AI agents. agentsh adds a **po
 | | Policy decisions | Allow, deny, or require approval for commands |
 | | Argument matching | Block dangerous flags (e.g., `rm -rf`) via regex |
 | | Command categories | Safe commands allowed, dangerous ones blocked |
+| | Env injection | Inject `BASH_ENV` to disable dangerous bash builtins |
 | **Network Filtering** | Domain allowlist | Only approved domains accessible (npm, PyPI, Cargo, Go) |
 | | Cloud metadata blocking | Prevents SSRF (169.254.169.254, metadata.google.internal) |
 | | Private network blocking | No lateral movement (10.x, 172.16.x, 192.168.x) |
@@ -50,14 +51,14 @@ Runloop provides isolated Devbox environments for AI agents. agentsh adds a **po
 
 ## Limitations on Runloop
 
-Based on `agentsh detect` output (v0.8.0), here's the capability matrix for Runloop Devboxes:
+Based on `agentsh detect` output (v0.8.10), here's the capability matrix for Runloop Devboxes:
 
 | Capability | Detected | Usable | Notes |
 |------------|----------|--------|-------|
 | capabilities_drop | ✓ | ✓ | Drop Linux capabilities |
 | cgroups_v2 | ✓ | ✗ | Filesystem is read-only |
 | ebpf | ✓ | ? | Available, not tested |
-| seccomp | ✓ | ✗ | Conflicts with Runloop's container seccomp profile |
+| seccomp | ✓ | ✗ | Nested seccomp profiles conflict with Runloop's container profile |
 | landlock_abi | ✓ (v0) | ✗ | Too old, limited usefulness |
 | fuse | ✗ | ✗ | `/dev/fuse` not available |
 | landlock | ✗ | ✗ | Full Landlock not available |
@@ -70,6 +71,7 @@ Based on `agentsh detect` output (v0.8.0), here's the capability matrix for Runl
 These limitations are mitigated by:
 - **Network filtering**: Proxy-based domain/IP blocking (works without Landlock network)
 - **Command blocking**: Policy engine blocks dangerous commands
+- **Bash builtin blocking**: `bash_startup.sh` disables builtins that bypass seccomp (kill, enable, ulimit, umask)
 - **Resource limits**: Enforced by Runloop's container configuration
 - **Approvals**: Can be enabled in async mode with webhook integration
 
@@ -140,7 +142,7 @@ Verifies normal development operations work correctly.
 | Git version | `git --version` | **PASS** | git version 2.43.0 |
 | Bash execution | `bash -c 'echo $((1+1))'` | **PASS** | Output: 2 |
 | npm registry access | `curl -sI https://registry.npmjs.org/` | **PASS** | HTTP/1.1 200 Connection Established |
-| agentsh version | `/usr/bin/agentsh --version` | **PASS** | agentsh 0.8.0 |
+| agentsh version | `/usr/bin/agentsh --version` | **PASS** | agentsh 0.8.10 |
 
 ### Summary
 
@@ -360,6 +362,15 @@ file_rules:
 ```
 
 ## Troubleshooting
+
+### bash_startup.sh "enable: command not found" messages
+
+You may see stderr messages like:
+```
+/usr/lib/agentsh/bash_startup.sh: line 5: enable: command not found
+```
+
+This is expected behavior. The `bash_startup.sh` script (injected via `BASH_ENV`) attempts to disable dangerous bash builtins using `enable -n`. In non-interactive shell contexts, the `enable` builtin may not be available. These messages are harmless noise and don't affect security—the command blocking still works via agentsh policy rules.
 
 ### Check agentsh logs
 

@@ -1,11 +1,15 @@
 # agentsh server configuration for Runloop Devboxes
-# Based on: agentsh detect (v0.8.0)
+# Based on: agentsh detect (v0.8.10)
 # Platform: linux | Security mode: minimal | Protection score: ~50%
 #
 # Available capabilities on Runloop:
 #   ✓ capabilities_drop, cgroups_v2, ebpf, seccomp, seccomp_basic, seccomp_user_notify
 #   ✓ landlock_abi (v0)
 #   ✗ fuse, landlock, landlock_network, pid_namespace
+#
+# Note: seccomp is detected as available but conflicts with Runloop's container
+# seccomp profile. v0.8.3+ fixed notify handler issues, but nested seccomp
+# profiles remain incompatible in containerized environments.
 
 server:
   http:
@@ -63,6 +67,12 @@ sandbox:
   # Likely conflicts with Runloop's existing container seccomp profile
   seccomp:
     enabled: false
+
+  # env_inject: Inject environment variables into spawned commands
+  # Addresses container runtimes stripping Docker ENV settings
+  # bash_startup.sh disables bash builtins that bypass seccomp (kill, enable, ulimit, etc.)
+  env_inject:
+    BASH_ENV: "/usr/lib/agentsh/bash_startup.sh"
 
 proxy:
   mode: "embedded"
